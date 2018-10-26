@@ -76,3 +76,5 @@ g = shap.Coop_Game(player_list, coalition_dictionary)
 print g.shapley()
 
 print 'One can expand the amount of players v1 to v1000, but the size of the characteristic function would be 2**1001 which is why I stopped at 5 players'
+
+#What's also interesting is the Shapley value of Coordicorp (v(c)) is in each example, since if it's above 0, Coordicorp has an incentive to create coalitions, it's just that the other 1000 players may not be interested in joining
