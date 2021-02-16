@@ -1,0 +1,53 @@
+import numpy as np
+import pandas as pd
+import statsmodels.formula.api as sm
+import shap
+
+"""
+Using Shapley values for treating multicollinearity in econometrics
+"""
+
+yd=pd.read_csv('Y.csv') # dependent variable data
+xa=pd.read_csv('X1.csv') #independent variable 1
+xb=pd.read_csv('X2.csv') #independent variable 2
+xc=pd.read_csv('X3.csv') #independent variable 3
+yd=pd.DataFrame(yd)
+xa=pd.DataFrame(xa)
+xb=pd.DataFrame(xb)
+xc=pd.DataFrame(xc)
+series=pd.concat([yd,xa,xb,xc], axis=1)
+series_unfiltered=pd.concat([yd,xa,xb,xc], axis=1)
+series_unfiltered.columns=['Y','X1','X2','X3']
+series.columns=['Y','X1','X2','X3']
+
+result=sm.ols(formula='Y ~ X1 + X2 + X3', data=series_unfiltered).fit()
+
+print result.summary()
+
+def reg_m(y,x):
+    ones=np.ones(len(x[0]))
+    X=sm.add_constant(np.column_stack((x[0],ones)))
+    for ele in x[1:]:
+        X=sm.add_constant(np.column_stack((ele,X)))
+    results=sm.OLS(y,X).fit()
+    return results
+
+regression_combos=shap.power_set(np.array(series.columns[1:]))
+
+characteristic_fx={}
+
+for i in xrange(0,len(regression_combos)):
+    deps='+'.join(regression_combos[i])
+    result=sm.ols(formula='sales ~ '+ deps, data=series_unfiltered).fit()
+    print str(deps) + ' with R-squared of: '+ str(round(result.rsquared,3))
+    characteristic_fx[str(','.join(regression_combos[i]))]= round(result.rsquared,5)
+
+player_list = list(np.array(series.columns[1:]))
+
+coalition_dictionary = characteristic_fx
+
+g = shap.Coop_Game(player_list,coalition_dictionary)
+
+print player_list # our list of independent variables
+print coalition_dictionary # our list of all of the R-squared
+print 'Shapley adjusted beta coefficients are: ' + str(g.shapley())
